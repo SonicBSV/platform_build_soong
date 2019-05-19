@@ -21,7 +21,6 @@ import (
 	"github.com/google/blueprint"
 
 	"android/soong/android"
-	"android/soong/java/config"
 )
 
 var manifestFixerRule = pctx.AndroidStaticRule("manifestFixer",
@@ -37,9 +36,8 @@ var manifestFixerRule = pctx.AndroidStaticRule("manifestFixer",
 
 var manifestMergerRule = pctx.AndroidStaticRule("manifestMerger",
 	blueprint.RuleParams{
-		Command: `${config.JavaCmd} -classpath ${config.ManifestMergerClasspath} com.android.manifmerger.Merger ` +
-			`--main $in $libs --out $out`,
-		CommandDeps: config.ManifestMergerClasspath,
+		Command:     `${config.ManifestMergerCmd} --main $in $libs --out $out`,
+		CommandDeps: []string{"${config.ManifestMergerCmd}"},
 	},
 	"libs")
 
@@ -70,15 +68,27 @@ func manifestMerger(ctx android.ModuleContext, manifest android.Path, sdkContext
 		args = append(args, "--use-embedded-dex=true")
 	}
 
+	var deps android.Paths
+	targetSdkVersion := sdkVersionOrDefault(ctx, sdkContext.targetSdkVersion())
+	if targetSdkVersion == ctx.Config().PlatformSdkCodename() &&
+		ctx.Config().UnbundledBuild() &&
+		!ctx.Config().UnbundledBuildUsePrebuiltSdks() &&
+		ctx.Config().IsEnvTrue("UNBUNDLED_BUILD_TARGET_SDK_WITH_API_FINGERPRINT") {
+		apiFingerprint := ApiFingerprintPath(ctx)
+		targetSdkVersion += fmt.Sprintf(".$$(cat %s)", apiFingerprint.String())
+		deps = append(deps, apiFingerprint)
+	}
+
 	// Inject minSdkVersion into the manifest
 	fixedManifest := android.PathForModuleOut(ctx, "manifest_fixer", "AndroidManifest.xml")
 	ctx.Build(pctx, android.BuildParams{
-		Rule:   manifestFixerRule,
-		Input:  manifest,
-		Output: fixedManifest,
+		Rule:      manifestFixerRule,
+		Input:     manifest,
+		Implicits: deps,
+		Output:    fixedManifest,
 		Args: map[string]string{
 			"minSdkVersion":    sdkVersionOrDefault(ctx, sdkContext.minSdkVersion()),
-			"targetSdkVersion": sdkVersionOrDefault(ctx, sdkContext.targetSdkVersion()),
+			"targetSdkVersion": targetSdkVersion,
 			"args":             strings.Join(args, " "),
 		},
 	})

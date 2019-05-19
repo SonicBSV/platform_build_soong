@@ -43,7 +43,8 @@ type variableProperties struct {
 		} `android:"arch_variant"`
 
 		Malloc_not_svelte struct {
-			Cflags []string `android:"arch_variant"`
+			Cflags      []string `android:"arch_variant"`
+			Shared_libs []string `android:"arch_variant"`
 		} `android:"arch_variant"`
 
 		Safestack struct {
@@ -87,6 +88,7 @@ type variableProperties struct {
 			Cflags   []string
 			Cppflags []string
 			Init_rc  []string
+			Required []string
 		}
 
 		// eng is true for -eng builds, and can be used to turn on additionaly heavyweight debugging
@@ -163,14 +165,18 @@ type productVariables struct {
 	BuildNumberFromFile *string `json:",omitempty"`
 	DateFromFile        *string `json:",omitempty"`
 
-	Platform_version_name             *string  `json:",omitempty"`
-	Platform_sdk_version              *int     `json:",omitempty"`
-	Platform_sdk_codename             *string  `json:",omitempty"`
-	Platform_sdk_final                *bool    `json:",omitempty"`
-	Platform_version_active_codenames []string `json:",omitempty"`
-	Platform_version_future_codenames []string `json:",omitempty"`
-	Platform_vndk_version             *string  `json:",omitempty"`
-	Platform_systemsdk_versions       []string `json:",omitempty"`
+	Platform_version_name                     *string  `json:",omitempty"`
+	Platform_sdk_version                      *int     `json:",omitempty"`
+	Platform_sdk_codename                     *string  `json:",omitempty"`
+	Platform_sdk_final                        *bool    `json:",omitempty"`
+	Platform_version_active_codenames         []string `json:",omitempty"`
+	Platform_version_future_codenames         []string `json:",omitempty"`
+	Platform_vndk_version                     *string  `json:",omitempty"`
+	Platform_systemsdk_versions               []string `json:",omitempty"`
+	Platform_security_patch                   *string  `json:",omitempty"`
+	Platform_preview_sdk_version              *string  `json:",omitempty"`
+	Platform_min_supported_target_sdk_version *string  `json:",omitempty"`
+	Platform_base_os                          *string  `json:",omitempty"`
 
 	DeviceName              *string  `json:",omitempty"`
 	DeviceArch              *string  `json:",omitempty"`
@@ -192,7 +198,8 @@ type productVariables struct {
 	CrossHostArch          *string `json:",omitempty"`
 	CrossHostSecondaryArch *string `json:",omitempty"`
 
-	ResourceOverlays           []string `json:",omitempty"`
+	DeviceResourceOverlays     []string `json:",omitempty"`
+	ProductResourceOverlays    []string `json:",omitempty"`
 	EnforceRROTargets          []string `json:",omitempty"`
 	EnforceRROExcludedOverlays []string `json:",omitempty"`
 
@@ -284,6 +291,8 @@ type productVariables struct {
 
 	PgoAdditionalProfileDirs []string `json:",omitempty"`
 
+	VndkUseCoreVariant *bool `json:",omitempty"`
+
 	BoardVendorSepolicyDirs      []string `json:",omitempty"`
 	BoardOdmSepolicyDirs         []string `json:",omitempty"`
 	BoardPlatPublicSepolicyDirs  []string `json:",omitempty"`
@@ -308,6 +317,8 @@ type productVariables struct {
 	ProductHiddenAPIStubs       []string `json:",omitempty"`
 	ProductHiddenAPIStubsSystem []string `json:",omitempty"`
 	ProductHiddenAPIStubsTest   []string `json:",omitempty"`
+
+	TargetFSConfigGen []string `json:",omitempty"`
 }
 
 func boolPtr(v bool) *bool {

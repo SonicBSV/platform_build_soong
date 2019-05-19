@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"android/soong/android"
-	"android/soong/dexpreopt"
 )
 
 func TestConfig(buildDir string, env map[string]string) android.Config {
@@ -29,10 +28,6 @@ func TestConfig(buildDir string, env map[string]string) android.Config {
 		env["ANDROID_JAVA8_HOME"] = "jdk8"
 	}
 	config := android.TestArchConfig(buildDir, env)
-	config.TestProductVariables.DeviceSystemSdkVersions = []string{"14", "15"}
-
-	pathCtx := android.PathContextForTesting(config, nil)
-	setDexpreoptTestGlobalConfig(config, dexpreopt.GlobalConfigForTests(pathCtx))
 
 	return config
 }
@@ -42,7 +37,6 @@ func GatherRequiredDepsForTest() string {
 
 	extraModules := []string{
 		"core-lambda-stubs",
-		"framework",
 		"ext",
 		"updatable_media_stubs",
 		"android_stubs_current",
@@ -67,6 +61,17 @@ func GatherRequiredDepsForTest() string {
 	}
 
 	bp += `
+		java_library {
+			name: "framework",
+			srcs: ["a.java"],
+			no_standard_libs: true,
+			sdk_version: "core_current",
+			system_modules: "core-platform-api-stubs-system-modules",
+			aidl: {
+				export_include_dirs: ["framework/aidl"],
+			},
+		}
+
 		android_app {
 			name: "framework-res",
 			no_framework_libs: true,

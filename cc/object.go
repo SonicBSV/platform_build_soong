@@ -16,10 +16,8 @@ package cc
 
 import (
 	"fmt"
-	"strings"
 
 	"android/soong/android"
-	"android/soong/cc/config"
 )
 
 //
@@ -30,38 +28,26 @@ func init() {
 	android.RegisterModuleType("cc_object", ObjectFactory)
 }
 
-type objectCompiler struct {
-	*baseCompiler
-}
-
 type objectLinker struct {
 	*baseLinker
 	Properties ObjectLinkerProperties
 }
 
+// cc_object runs the compiler without running the linker. It is rarely
+// necessary, but sometimes used to generate .s files from .c files to use as
+// input to a cc_genrule module.
 func ObjectFactory() android.Module {
 	module := newBaseModule(android.HostAndDeviceSupported, android.MultilibBoth)
 	module.linker = &objectLinker{
 		baseLinker: NewBaseLinker(nil),
 	}
-	module.compiler = &objectCompiler{
-		baseCompiler: NewBaseCompiler(),
-	}
+	module.compiler = NewBaseCompiler()
 
 	// Clang's address-significance tables are incompatible with ld -r.
 	module.compiler.appendCflags([]string{"-fno-addrsig"})
 
 	module.stl = &stl{}
 	return module.Init()
-}
-
-func (compiler *objectCompiler) compilerFlags(ctx ModuleContext, flags Flags, deps PathDeps) Flags {
-	flags = compiler.baseCompiler.compilerFlags(ctx, flags, deps)
-	// SDLLVM does not currently support the "-fno-addrsig" option
-	if flags.Sdclang && !strings.Contains(config.SDClangPath, "8.0") {
-		flags.CFlags, _ = filterList(flags.CFlags, []string{"-fno-addrsig"})
-	}
-	return flags
 }
 
 func (object *objectLinker) appendLdflags(flags []string) {
@@ -127,4 +113,8 @@ func (object *objectLinker) link(ctx ModuleContext,
 
 func (object *objectLinker) unstrippedOutputFilePath() android.Path {
 	return nil
+}
+
+func (object *objectLinker) nativeCoverage() bool {
+	return true
 }

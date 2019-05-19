@@ -59,7 +59,7 @@ var (
 		})
 )
 
-func genAidl(ctx android.ModuleContext, aidlFile android.Path, aidlFlags string) android.Path {
+func genAidl(ctx android.ModuleContext, aidlFile android.Path, aidlFlags string, deps android.Paths) android.Path {
 	javaFile := android.GenPathWithExt(ctx, "aidl", aidlFile, "java")
 	depFile := javaFile.String() + ".d"
 
@@ -68,6 +68,7 @@ func genAidl(ctx android.ModuleContext, aidlFile android.Path, aidlFlags string)
 		Description: "aidl " + aidlFile.Rel(),
 		Output:      javaFile,
 		Input:       aidlFile,
+		Implicits:   deps,
 		Args: map[string]string{
 			"depFile":   depFile,
 			"aidlFlags": aidlFlags,
@@ -111,14 +112,14 @@ func (j *Module) genSources(ctx android.ModuleContext, srcFiles android.Paths,
 	for _, srcFile := range srcFiles {
 		switch srcFile.Ext() {
 		case ".aidl":
-			javaFile := genAidl(ctx, srcFile, flags.aidlFlags)
+			javaFile := genAidl(ctx, srcFile, flags.aidlFlags, flags.aidlDeps)
 			outSrcFiles = append(outSrcFiles, javaFile)
 		case ".logtags":
 			j.logtagsSrcs = append(j.logtagsSrcs, srcFile)
 			javaFile := genLogtags(ctx, srcFile)
 			outSrcFiles = append(outSrcFiles, javaFile)
 		case ".proto":
-			srcJarFile := genProto(ctx, srcFile, flags)
+			srcJarFile := genProto(ctx, srcFile, flags.proto)
 			outSrcFiles = append(outSrcFiles, srcJarFile)
 		case ".sysprop":
 			srcJarFile := genSysprop(ctx, srcFile)
